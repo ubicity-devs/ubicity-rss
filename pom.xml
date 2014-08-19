@@ -23,6 +23,7 @@
 			<groupId>at.ac.ait.ubicity</groupId>
 			<artifactId>ubicity-commons</artifactId>
 			<version>${project.version}</version>
+			<scope>provided</scope>
 		</dependency>
 	</dependencies>
 
