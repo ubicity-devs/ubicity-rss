@@ -60,11 +60,6 @@ public class RssReaderTask extends AbstractTask {
 	}
 
 	@Override
-	public String getName() {
-		return "newsbrief.eu-rss";
-	}
-
-	@Override
 	public void executeTask() {
 		try {
 			parser = new RssParser((String) getProperty("URL"));

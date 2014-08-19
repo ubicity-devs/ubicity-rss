@@ -55,6 +55,7 @@ public class RssReaderImpl extends AbstractCronPlugin implements RssReader {
 
 		try {
 			RssReaderTask newsbrief = new RssReaderTask();
+			newsbrief.setName("newsbrief.eu");
 			newsbrief.setTimeInterval("0 0/2 * * * ?");
 			newsbrief.setProperty("URL",
 					"http://emm.newsbrief.eu/rss?type=rtn&language=en");
