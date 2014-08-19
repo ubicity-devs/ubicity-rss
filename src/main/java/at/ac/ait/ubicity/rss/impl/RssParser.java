@@ -13,17 +13,23 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.events.Characters;
 import javax.xml.stream.events.XMLEvent;
 
+import org.apache.log4j.Logger;
+
 import at.ac.ait.ubicity.contracts.rss.RssDTO;
 
 public class RssParser {
 
+	final static Logger logger = Logger.getLogger(RssParser.class);
+
 	private final URL url;
 	private static XMLInputFactory factory = XMLInputFactory.newInstance();
 
-	private String lastStoredId;
+	private String lastStoredId = "";
 
 	public RssParser(String urlString) throws MalformedURLException {
 		this.url = new URL(urlString);
+
+		logger.info("fetching data from " + urlString);
 	}
 
 	public List<RssDTO> fetchUpdates() throws Exception {
@@ -45,12 +51,14 @@ public class RssParser {
 					list.add(dto);
 
 					if (lastStoredId.equals(dto.getId())) {
-						return list;
+						break;
 					}
 				}
 			}
 		}
 
+		in.close();
+		lastStoredId = list.get(list.size() - 1).getId();
 		return list;
 	}
 

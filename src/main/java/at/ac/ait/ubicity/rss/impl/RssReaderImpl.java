@@ -40,7 +40,7 @@ public class RssReaderImpl extends AbstractCronPlugin implements RssReader {
 
 	final static Logger logger = Logger.getLogger(RssReaderImpl.class);
 
-	List<CronTask> tasks = new ArrayList<CronTask>();
+	private final List<CronTask> tasks = new ArrayList<CronTask>();
 
 	protected RssReaderImpl() throws UbicityCronException {
 		super();
@@ -54,8 +54,14 @@ public class RssReaderImpl extends AbstractCronPlugin implements RssReader {
 		setPluginConfig(config);
 
 		try {
-			tasks.add(new RssReaderTask(
-					"http://emm.newsbrief.eu/rss?type=rtn&language=en"));
+			RssReaderTask newsbrief = new RssReaderTask();
+			newsbrief.setTimeInterval("0 0/2 * * * ?");
+			newsbrief.setProperty("URL",
+					"http://emm.newsbrief.eu/rss?type=rtn&language=en");
+
+			tasks.add(newsbrief);
+
+			initCron(tasks);
 		} catch (Exception e) {
 			logger.error("Task creation threw error", e);
 		}
@@ -86,11 +92,5 @@ public class RssReaderImpl extends AbstractCronPlugin implements RssReader {
 	@Shutdown
 	public void shutdown() {
 
-	}
-
-	@Override
-	public List<CronTask> getJobs() {
-		// TODO Auto-generated method stub
-		return null;
 	}
 }

@@ -34,10 +34,10 @@ public class RssReaderTask extends AbstractTask {
 
 	final static Logger logger = Logger.getLogger(RssReaderTask.class);
 
-	private final RssParser parser;
-	private final Producer producer;
+	private RssParser parser;
+	private Producer producer;
 
-	private final String esIndex;
+	private String esIndex;
 
 	class Producer extends BrokerProducer {
 
@@ -48,12 +48,15 @@ public class RssReaderTask extends AbstractTask {
 		}
 	}
 
-	public RssReaderTask(String url) throws Exception {
-		parser = new RssParser(url);
-		PropertyLoader config = new PropertyLoader(
-				RssReaderTask.class.getResource("/rss.cfg"));
-		esIndex = config.getString("plugin.rss.elasticsearch.index");
-		producer = new Producer(config);
+	public RssReaderTask() {
+		try {
+			PropertyLoader config = new PropertyLoader(
+					RssReaderTask.class.getResource("/rss.cfg"));
+			esIndex = config.getString("plugin.rss.elasticsearch.index");
+			producer = new Producer(config);
+		} catch (Exception e) {
+			logger.error("Exc. while creating producer", e);
+		}
 	}
 
 	@Override
@@ -62,14 +65,10 @@ public class RssReaderTask extends AbstractTask {
 	}
 
 	@Override
-	public String getTimeInterval() {
-		// Every 10mins
-		return "0 0/10 * * * ?";
-	}
-
-	@Override
 	public void executeTask() {
 		try {
+			parser = new RssParser((String) getProperty("URL"));
+
 			List<RssDTO> dtoList = parser.fetchUpdates();
 
 			dtoList.stream().forEach((dto) -> {
@@ -81,8 +80,9 @@ public class RssReaderTask extends AbstractTask {
 			});
 		} catch (Exception e) {
 			logger.warn("Caught exc. while fetching updates", e);
-
 		}
+
+		producer.shutdown();
 	}
 
 	private EventEntry createEvent(RssDTO data) {

@@ -19,7 +19,7 @@ package at.ac.ait.ubicity.rss;
 
  */
 
-import at.ac.ait.ubicity.commons.interfaces.UbicityPlugin;
+import at.ac.ait.ubicity.commons.interfaces.CronPlugin;
 
-public interface RssReader extends UbicityPlugin {
+public interface RssReader extends CronPlugin {
 }
