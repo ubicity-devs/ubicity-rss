@@ -121,8 +121,8 @@ public class RssParser {
 					String[] geoPoint = getElementData(event, eventReader)
 							.split(" ");
 
-					dto.setGeoRssPoint(Float.parseFloat(geoPoint[0]),
-							Float.parseFloat(geoPoint[1]));
+					dto.setGeoRssPoint(Float.parseFloat(geoPoint[1]),
+							Float.parseFloat(geoPoint[0]));
 				}
 
 			}
