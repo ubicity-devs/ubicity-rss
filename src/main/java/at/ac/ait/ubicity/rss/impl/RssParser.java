@@ -3,9 +3,11 @@ package at.ac.ait.ubicity.rss.impl;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLInputFactory;
@@ -26,10 +28,10 @@ public class RssParser {
 
 	private String lastStoredId = "";
 
-	public RssParser(String urlString) throws MalformedURLException {
+	public RssParser(String urlString, String lastStoredId)
+			throws MalformedURLException {
 		this.url = new URL(urlString);
-
-		logger.info("fetching data from " + urlString);
+		this.lastStoredId = lastStoredId;
 	}
 
 	public List<RssDTO> fetchUpdates() throws Exception {
@@ -38,8 +40,9 @@ public class RssParser {
 
 		InputStream in = url.openStream();
 		XMLEventReader eventReader = factory.createXMLEventReader(in);
+		boolean alreadyProcessed = false;
 
-		while (eventReader.hasNext()) {
+		while (eventReader.hasNext() && !alreadyProcessed) {
 			XMLEvent event = eventReader.nextEvent();
 
 			if (event.isStartElement()) {
@@ -47,22 +50,25 @@ public class RssParser {
 						.getLocalPart();
 
 				if (RssTag.ITEM.getName().equalsIgnoreCase(localPart)) {
-					RssDTO dto = setContent(eventReader);
-					list.add(dto);
 
-					if (lastStoredId.equals(dto.getId())) {
-						break;
+					RssDTO dto = setContent(eventReader);
+					if (lastStoredId != null
+							&& lastStoredId.equals(dto.getId())) {
+						alreadyProcessed = true;
+					} else {
+						list.add(dto);
 					}
 				}
 			}
 		}
 
 		in.close();
-		lastStoredId = list.get(list.size() - 1).getId();
+		logger.info(list.size() + " new RSS Entries read from "
+				+ this.url.toString());
+
 		return list;
 	}
 
-	@SuppressWarnings("deprecation")
 	private RssDTO setContent(XMLEventReader eventReader)
 			throws XMLStreamException {
 
@@ -96,8 +102,15 @@ public class RssParser {
 					dto.setSource(getElementData(event, eventReader));
 				} else if (RssTag.CREATED_AT.getName().equalsIgnoreCase(
 						localPart)) {
-					dto.setCreatedAt(new Date(
-							getElementData(event, eventReader)));
+
+					SimpleDateFormat format = new SimpleDateFormat(
+							"EEE, dd MMM yyyy HH:mm:ss Z", Locale.US);
+					String date = getElementData(event, eventReader);
+					try {
+						dto.setCreatedAt(format.parse(date));
+					} catch (ParseException e) {
+						logger.warn("Not able to parse date: " + date);
+					}
 				} else if (RssTag.LANG.getName().equalsIgnoreCase(localPart)) {
 					dto.setLang(getElementData(event, eventReader));
 				} else if (RssTag.CATEGORY.getName()

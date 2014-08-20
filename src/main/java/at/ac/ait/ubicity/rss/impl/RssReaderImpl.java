@@ -52,20 +52,7 @@ public class RssReaderImpl extends AbstractCronPlugin implements RssReader {
 		PropertyLoader config = new PropertyLoader(
 				RssReaderImpl.class.getResource("/rss.cfg"));
 		setPluginConfig(config);
-
-		try {
-			RssReaderTask newsbrief = new RssReaderTask();
-			newsbrief.setName("newsbrief.eu");
-			newsbrief.setTimeInterval("0 0/10 * * * ?");
-			newsbrief.setProperty("URL",
-					"http://emm.newsbrief.eu/rss?type=rtn&language=en");
-
-			tasks.add(newsbrief);
-
-			initCron(tasks);
-		} catch (Exception e) {
-			logger.error("Task creation threw error", e);
-		}
+		setReaderTasks(config);
 
 		logger.info(name + " loaded");
 	}
@@ -77,6 +64,31 @@ public class RssReaderImpl extends AbstractCronPlugin implements RssReader {
 	 */
 	private void setPluginConfig(PropertyLoader config) {
 		this.name = config.getString("plugin.rss.name");
+	}
+
+	/**
+	 * Sets the configured urls in the cron tasks.
+	 * 
+	 * @param config
+	 */
+	private void setReaderTasks(PropertyLoader config) {
+		String interval = config.getString("plugin.rss.cron.interval");
+		String[] urlList = config.getStringArray("plugin.rss.broker.url");
+
+		try {
+			for (String url : urlList) {
+				RssReaderTask newsbrief = new RssReaderTask();
+				newsbrief.setTimeInterval(interval);
+				newsbrief.setProperty("URL", url);
+				newsbrief.setName(url.split("[?]")[0]);
+
+				tasks.add(newsbrief);
+			}
+
+			initCron(tasks);
+		} catch (Exception e) {
+			logger.error("Task creation threw error", e);
+		}
 	}
 
 	@Override

@@ -62,17 +62,25 @@ public class RssReaderTask extends AbstractTask {
 	@Override
 	public void executeTask() {
 		try {
-			parser = new RssParser((String) getProperty("URL"));
+			parser = new RssParser((String) getProperty("URL"),
+					(String) getProperty("lastStoredId"));
 
 			List<RssDTO> dtoList = parser.fetchUpdates();
 
 			dtoList.stream().forEach((dto) -> {
 				try {
-					producer.publish(createEvent(dto));
+					EventEntry e = createEvent(dto);
+
+					producer.publish(e);
 				} catch (Exception e) {
 					logger.warn("Caught exc. while publishing", e);
 				}
 			});
+
+			if (dtoList.size() > 0) {
+				setProperty("lastStoredId", dtoList.get(0).getId());
+			}
+
 		} catch (Exception e) {
 			logger.warn("Caught exc. while fetching updates", e);
 		}
