@@ -1,30 +1,27 @@
 package at.ac.ait.ubicity.rss.impl;
 
-import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
-
-import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.events.Characters;
-import javax.xml.stream.events.XMLEvent;
 
 import org.apache.log4j.Logger;
+import org.jdom2.Element;
 
 import at.ac.ait.ubicity.contracts.rss.RssDTO;
+
+import com.rometools.rome.feed.synd.SyndCategory;
+import com.rometools.rome.feed.synd.SyndEntry;
+import com.rometools.rome.feed.synd.SyndFeed;
+import com.rometools.rome.io.SyndFeedInput;
+import com.rometools.rome.io.XmlReader;
 
 public class RssParser {
 
 	final static Logger logger = Logger.getLogger(RssParser.class);
 
 	private final URL url;
-	private static XMLInputFactory factory = XMLInputFactory.newInstance();
+	private static SyndFeedInput input = new SyndFeedInput();
 
 	private String lastStoredId = "";
 
@@ -37,107 +34,55 @@ public class RssParser {
 	public List<RssDTO> fetchUpdates() throws Exception {
 
 		List<RssDTO> list = new ArrayList<RssDTO>();
+		SyndFeed feed = input.build(new XmlReader(url));
 
-		InputStream in = url.openStream();
-		XMLEventReader eventReader = factory.createXMLEventReader(in);
-		boolean alreadyProcessed = false;
+		for (SyndEntry e : feed.getEntries()) {
+			if (lastStoredId != null && lastStoredId.equals(e.getUri())) {
+				break;
+			} else {
+				RssDTO dto = new RssDTO();
+				dto.setId(e.getUri());
+				dto.setTitle(e.getTitle());
+				dto.setText(e.getDescription().getValue());
+				dto.setSource(e.getSource().getLink());
+				dto.setCreatedAt(e.getPublishedDate());
 
-		while (eventReader.hasNext() && !alreadyProcessed) {
-			XMLEvent event = eventReader.nextEvent();
-
-			if (event.isStartElement()) {
-				String localPart = event.asStartElement().getName()
-						.getLocalPart();
-
-				if (RssTag.ITEM.getName().equalsIgnoreCase(localPart)) {
-
-					RssDTO dto = setContent(eventReader);
-					if (lastStoredId != null
-							&& lastStoredId.equals(dto.getId())) {
-						alreadyProcessed = true;
-					} else {
-						list.add(dto);
-					}
+				List<String> cats = new ArrayList<String>();
+				for (SyndCategory cat : e.getCategories()) {
+					cats.add(cat.getName());
 				}
+
+				dto.setCategories(cats);
+
+				dto.setLang(readForeignMarkup(e.getForeignMarkup(), ForeignRssTag.LANG));
+
+				String geo = readForeignMarkup(e.getForeignMarkup(),
+						ForeignRssTag.GEO_POINT);
+
+				if (geo != null) {
+					String[] geoAr = geo.split(" ");
+					dto.setGeoRssPoint(Float.parseFloat(geoAr[1]),
+							Float.parseFloat(geoAr[0]));
+				}
+
+				list.add(dto);
 			}
 		}
 
-		in.close();
 		logger.info(list.size() + " new RSS Entries read from "
 				+ this.url.toString());
 
 		return list;
 	}
 
-	private RssDTO setContent(XMLEventReader eventReader)
-			throws XMLStreamException {
+	private String readForeignMarkup(List<Element> list, ForeignRssTag tag) {
 
-		RssDTO dto = new RssDTO();
-
-		// build dto unless end item tag reached
-		while (eventReader.hasNext()) {
-			XMLEvent event = eventReader.nextEvent();
-
-			// return is closing tag is reached
-			if (event.isEndElement()) {
-				String localPart = event.asEndElement().getName()
-						.getLocalPart();
-
-				if (RssTag.ITEM.getName().equalsIgnoreCase(localPart)) {
-					return dto;
-				}
-			}
-
-			if (event.isStartElement()) {
-				String localPart = event.asStartElement().getName()
-						.getLocalPart();
-
-				if (RssTag.ID.getName().equalsIgnoreCase(localPart)) {
-					dto.setId(getElementData(event, eventReader));
-				} else if (RssTag.TITLE.getName().equalsIgnoreCase(localPart)) {
-					dto.setTitle(getElementData(event, eventReader));
-				} else if (RssTag.TEXT.getName().equalsIgnoreCase(localPart)) {
-					dto.setText(getElementData(event, eventReader));
-				} else if (RssTag.SOURCE.getName().equalsIgnoreCase(localPart)) {
-					dto.setSource(getElementData(event, eventReader));
-				} else if (RssTag.CREATED_AT.getName().equalsIgnoreCase(
-						localPart)) {
-
-					SimpleDateFormat format = new SimpleDateFormat(
-							"EEE, dd MMM yyyy HH:mm:ss Z", Locale.US);
-					String date = getElementData(event, eventReader);
-					try {
-						dto.setCreatedAt(format.parse(date));
-					} catch (ParseException e) {
-						logger.warn("Not able to parse date: " + date);
-					}
-				} else if (RssTag.LANG.getName().equalsIgnoreCase(localPart)) {
-					dto.setLang(getElementData(event, eventReader));
-				} else if (RssTag.CATEGORY.getName()
-						.equalsIgnoreCase(localPart)) {
-					dto.setCategory(getElementData(event, eventReader));
-				} else if (RssTag.GEO_POINT.getName().equalsIgnoreCase(
-						localPart)) {
-					String[] geoPoint = getElementData(event, eventReader)
-							.split(" ");
-
-					dto.setGeoRssPoint(Float.parseFloat(geoPoint[1]),
-							Float.parseFloat(geoPoint[0]));
-				}
-
+		for (Element e : list) {
+			if (tag.getName().equalsIgnoreCase(e.getName())) {
+				return e.getContent(0).getValue();
 			}
 		}
 
-		return dto;
-	}
-
-	private String getElementData(XMLEvent event, XMLEventReader eventReader)
-			throws XMLStreamException {
-		String result = "";
-		event = eventReader.nextEvent();
-		if (event instanceof Characters) {
-			result = event.asCharacters().getData();
-		}
-		return result;
+		return null;
 	}
 }
