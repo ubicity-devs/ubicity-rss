@@ -44,7 +44,7 @@ public class RssParser {
 				dto.setId(e.getUri());
 				dto.setTitle(e.getTitle());
 				dto.setText(e.getDescription().getValue());
-				dto.setSource(e.getSource().getLink());
+				dto.setSource(e.getLink());
 				dto.setCreatedAt(e.getPublishedDate());
 
 				List<String> cats = new ArrayList<String>();
@@ -54,7 +54,8 @@ public class RssParser {
 
 				dto.setCategories(cats);
 
-				dto.setLang(readForeignMarkup(e.getForeignMarkup(), ForeignRssTag.LANG));
+				dto.setLang(readForeignMarkup(e.getForeignMarkup(),
+						ForeignRssTag.LANG));
 
 				String geo = readForeignMarkup(e.getForeignMarkup(),
 						ForeignRssTag.GEO_POINT);

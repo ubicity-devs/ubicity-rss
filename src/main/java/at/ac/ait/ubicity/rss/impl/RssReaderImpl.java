@@ -73,7 +73,7 @@ public class RssReaderImpl extends AbstractCronPlugin implements RssReader {
 	 */
 	private void setReaderTasks(PropertyLoader config) {
 		String interval = config.getString("plugin.rss.cron.interval");
-		String[] urlList = config.getStringArray("plugin.rss.broker.url");
+		String[] urlList = config.getStringArray("plugin.rss.url");
 
 		try {
 			for (String url : urlList) {
