@@ -63,7 +63,7 @@ public class RssReaderTask extends AbstractTask {
 	public void executeTask() {
 		try {
 			parser = new RssParser((String) getProperty("URL"),
-					(String) getProperty("lastStoredId"));
+					(String) getProperty("lastPubDate"));
 
 			List<RssDTO> dtoList = parser.fetchUpdates();
 
@@ -78,7 +78,7 @@ public class RssReaderTask extends AbstractTask {
 			});
 
 			if (dtoList.size() > 0) {
-				setProperty("lastStoredId", dtoList.get(0).getId());
+				setProperty("lastPubDate", dtoList.get(0).getCreatedAt());
 			}
 
 		} catch (Exception e) {

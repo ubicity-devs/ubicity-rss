@@ -3,6 +3,7 @@ package at.ac.ait.ubicity.rss.impl;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import org.apache.log4j.Logger;
@@ -23,12 +24,19 @@ public class RssParser {
 	private final URL url;
 	private static SyndFeedInput input = new SyndFeedInput();
 
-	private String lastStoredId = "";
+	private Date lastPubDate;
 
-	public RssParser(String urlString, String lastStoredId)
+	public RssParser(String urlString, String lastPubDate)
 			throws MalformedURLException {
 		this.url = new URL(urlString);
-		this.lastStoredId = lastStoredId;
+
+		if (lastPubDate != null) {
+			try {
+				this.lastPubDate = new Date(lastPubDate);
+			} catch (Exception e) {
+				// no further action
+			}
+		}
 	}
 
 	public List<RssDTO> fetchUpdates() throws Exception {
@@ -37,9 +45,7 @@ public class RssParser {
 		SyndFeed feed = input.build(new XmlReader(url));
 
 		for (SyndEntry e : feed.getEntries()) {
-			if (lastStoredId != null && lastStoredId.equals(e.getUri())) {
-				break;
-			} else {
+			if (isNewEntry(e.getPublishedDate())) {
 				RssDTO dto = new RssDTO();
 				dto.setId(e.getUri());
 				dto.setTitle(e.getTitle());
@@ -74,6 +80,13 @@ public class RssParser {
 				+ this.url.toString());
 
 		return list;
+	}
+
+	private boolean isNewEntry(Date pubDate) {
+		if (this.lastPubDate == null || pubDate == null) {
+			return true;
+		}
+		return this.lastPubDate.before(pubDate);
 	}
 
 	private String readForeignMarkup(List<Element> list, ForeignRssTag tag) {
