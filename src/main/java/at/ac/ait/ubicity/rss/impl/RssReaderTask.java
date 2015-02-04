@@ -62,11 +62,6 @@ public class RssReaderTask extends AbstractTask {
 	@Override
 	public void executeTask() {
 
-		if (((String) getProperty("URL")).contains("newsbrief")) {
-			logger.info("RSS Reader Started: "
-					+ (String) getProperty("lastGuid"));
-		}
-
 		try {
 			parser = new RssParser((String) getProperty("URL"),
 					(String) getProperty("lastGuid"));
@@ -92,11 +87,6 @@ public class RssReaderTask extends AbstractTask {
 		}
 
 		producer.shutdown();
-
-		if (((String) getProperty("URL")).contains("newsbrief")) {
-			logger.info("RSS Reader Stopped: "
-					+ (String) getProperty("lastGuid"));
-		}
 	}
 
 	private EventEntry createEvent(RssDTO data) {
