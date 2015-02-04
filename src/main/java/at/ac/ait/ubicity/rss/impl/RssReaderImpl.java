@@ -76,14 +76,26 @@ public class RssReaderImpl extends AbstractCronPlugin implements RssReader {
 		String[] urlList = config.getStringArray("plugin.rss.url");
 
 		try {
-			for (String url : urlList) {
+
+			for (int i = 0; i < urlList.length; i++) {
+
 				RssReaderTask newsbrief = new RssReaderTask();
-				newsbrief.setTimeInterval(interval);
-				newsbrief.setProperty("URL", url);
-				newsbrief.setName(url.split("[?]")[0]);
+				newsbrief.setTimeInterval(interval.replace("x",
+						String.valueOf(i * 5)).replace("y", String.valueOf(i)));
+				newsbrief.setProperty("URL", urlList[i]);
+				newsbrief.setName(urlList[i].split("[?]")[0]);
 
 				tasks.add(newsbrief);
 			}
+
+			/*
+			 * for (String url : urlList) { RssReaderTask newsbrief = new
+			 * RssReaderTask(); newsbrief.setTimeInterval(interval);
+			 * newsbrief.setProperty("URL", url);
+			 * newsbrief.setName(url.split("[?]")[0]);
+			 * 
+			 * tasks.add(newsbrief); }
+			 */
 
 			initCron(tasks);
 		} catch (Exception e) {

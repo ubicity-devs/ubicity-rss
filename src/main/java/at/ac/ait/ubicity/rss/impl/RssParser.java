@@ -24,19 +24,13 @@ public class RssParser {
 	private final URL url;
 	private static SyndFeedInput input = new SyndFeedInput();
 
-	private Date lastPubDate;
+	private final String lastGuid;
 
-	public RssParser(String urlString, String lastPubDate)
+	public RssParser(String urlString, String lastGuid)
 			throws MalformedURLException {
 		this.url = new URL(urlString);
 
-		if (lastPubDate != null) {
-			try {
-				this.lastPubDate = new Date(lastPubDate);
-			} catch (Exception e) {
-				// no further action
-			}
-		}
+		this.lastGuid = lastGuid;
 	}
 
 	public List<RssDTO> fetchUpdates() throws Exception {
@@ -82,11 +76,12 @@ public class RssParser {
 		return list;
 	}
 
-	private boolean isNewEntry(Date pubDate) {
-		if (this.lastPubDate == null || pubDate == null) {
+	private boolean isNewEntry(Date curGuid) {
+
+		if (this.lastGuid == null || curGuid == null) {
 			return true;
 		}
-		return this.lastPubDate.before(pubDate);
+		return this.lastGuid.equals(curGuid);
 	}
 
 	private String readForeignMarkup(List<Element> list, ForeignRssTag tag) {
