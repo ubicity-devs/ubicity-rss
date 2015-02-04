@@ -85,7 +85,10 @@ public class RssParser {
 		Thread thr = new Thread(r);
 		thr.start();
 
-		Thread.sleep(30 * 1000L);
+		// sleep max 30sek - afterwards interrupt thread
+		for (int i = 0; i < 30 && thr.isAlive(); i++) {
+			Thread.sleep(1000L);
+		}
 
 		if (thr.isAlive()) {
 			thr.interrupt();
