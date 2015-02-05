@@ -3,7 +3,6 @@ package at.ac.ait.ubicity.rss.impl;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import org.apache.log4j.Logger;
@@ -45,7 +44,7 @@ public class RssParser {
 					SyndFeed feed = input.build(new XmlReader(url));
 
 					for (SyndEntry e : feed.getEntries()) {
-						if (isNewEntry(e.getPublishedDate())) {
+						if (isNewEntry(e.getUri())) {
 							RssDTO dto = new RssDTO();
 							dto.setId(e.getUri());
 							dto.setTitle(e.getTitle());
@@ -102,7 +101,7 @@ public class RssParser {
 		return list;
 	}
 
-	private boolean isNewEntry(Date curGuid) {
+	private boolean isNewEntry(String curGuid) {
 
 		if (this.lastGuid == null || curGuid == null) {
 			return true;
