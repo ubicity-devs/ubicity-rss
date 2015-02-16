@@ -3,6 +3,7 @@ package at.ac.ait.ubicity.rss.impl;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,73 +37,57 @@ public class RssParser {
 
 		List<RssDTO> list = new ArrayList<RssDTO>();
 
-		// run fetching as thread to enable interrupt
-		Runnable r = new Runnable() {
-			@Override
-			public void run() {
-				XmlReader reader = null;
+		XmlReader reader = null;
 
-				try {
-					reader = new XmlReader(url);
-					SyndFeed feed = new SyndFeedInput().build(reader);
+		try {
+			URLConnection conn = url.openConnection();
+			conn.setRequestProperty("User-Agent",
+					"Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0");
 
-					for (SyndEntry e : feed.getEntries()) {
-						if (isNewEntry(e.getUri())) {
-							RssDTO dto = new RssDTO();
-							dto.setId(e.getUri());
-							dto.setTitle(e.getTitle());
-							dto.setText(e.getDescription().getValue());
-							dto.setSource(e.getLink());
-							dto.setCreatedAt(e.getPublishedDate());
+			reader = new XmlReader(conn);
+			SyndFeed feed = new SyndFeedInput().build(reader);
 
-							List<String> cats = new ArrayList<String>();
-							for (SyndCategory cat : e.getCategories()) {
-								cats.add(cat.getName());
-							}
+			for (SyndEntry e : feed.getEntries()) {
+				if (isNewEntry(e.getUri())) {
+					RssDTO dto = new RssDTO();
+					dto.setId(e.getUri());
+					dto.setTitle(e.getTitle());
+					dto.setText(e.getDescription().getValue());
+					dto.setSource(e.getLink());
+					dto.setCreatedAt(e.getPublishedDate());
 
-							dto.setCategories(cats);
-
-							dto.setLang(readForeignMarkup(e.getForeignMarkup(),
-									ForeignRssTag.LANG));
-
-							String geo = readForeignMarkup(
-									e.getForeignMarkup(),
-									ForeignRssTag.GEO_POINT);
-
-							if (geo != null) {
-								String[] geoAr = geo.split(" ");
-								dto.setGeoRssPoint(Float.parseFloat(geoAr[1]),
-										Float.parseFloat(geoAr[0]));
-							}
-
-							list.add(dto);
-						}
+					List<String> cats = new ArrayList<String>();
+					for (SyndCategory cat : e.getCategories()) {
+						cats.add(cat.getName());
 					}
 
-				} catch (Exception e) {
-					if (reader != null)
-						try {
-							reader.close();
-						} catch (IOException e1) {
-							logger.warn("Exc caught while closing reader", e1);
-						}
+					dto.setCategories(cats);
 
-					logger.warn("Exc caught while loading entries", e);
+					dto.setLang(readForeignMarkup(e.getForeignMarkup(),
+							ForeignRssTag.LANG));
+
+					String geo = readForeignMarkup(e.getForeignMarkup(),
+							ForeignRssTag.GEO_POINT);
+
+					if (geo != null) {
+						String[] geoAr = geo.split(" ");
+						dto.setGeoRssPoint(Float.parseFloat(geoAr[1]),
+								Float.parseFloat(geoAr[0]));
+					}
+
+					list.add(dto);
 				}
 			}
-		};
-		Thread thr = new Thread(r);
-		thr.start();
 
-		// sleep max 30sek - afterwards interrupt thread
-		for (int i = 0; i < 30 && thr.isAlive(); i++) {
-			Thread.sleep(1000L);
-		}
+		} catch (Exception e) {
+			if (reader != null)
+				try {
+					reader.close();
+				} catch (IOException e1) {
+					logger.warn("Exc caught while closing reader", e1);
+				}
 
-		if (thr.isAlive()) {
-			thr.interrupt();
-			logger.info("Task interrupted of URL: " + this.url.toString());
-			return list;
+			logger.warn("Exc caught while loading entries", e);
 		}
 
 		logger.info(list.size() + " new RSS Entries read from "
