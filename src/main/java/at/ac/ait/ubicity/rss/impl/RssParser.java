@@ -1,5 +1,6 @@
 package at.ac.ait.ubicity.rss.impl;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -21,7 +22,6 @@ public class RssParser {
 	final static Logger logger = Logger.getLogger(RssParser.class);
 
 	private final URL url;
-	private static SyndFeedInput input = new SyndFeedInput();
 
 	private final String lastGuid;
 
@@ -40,8 +40,11 @@ public class RssParser {
 		Runnable r = new Runnable() {
 			@Override
 			public void run() {
+				XmlReader reader = null;
+
 				try {
-					SyndFeed feed = input.build(new XmlReader(url));
+					reader = new XmlReader(url);
+					SyndFeed feed = new SyndFeedInput().build(reader);
 
 					for (SyndEntry e : feed.getEntries()) {
 						if (isNewEntry(e.getUri())) {
@@ -77,7 +80,14 @@ public class RssParser {
 					}
 
 				} catch (Exception e) {
-					logger.warn("Exc caught ", e);
+					if (reader != null)
+						try {
+							reader.close();
+						} catch (IOException e1) {
+							logger.warn("Exc caught while closing reader", e1);
+						}
+
+					logger.warn("Exc caught while loading entries", e);
 				}
 			}
 		};
