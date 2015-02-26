@@ -41,8 +41,12 @@ public class RssParser {
 				RssDTO dto = new RssDTO();
 				dto.setId(e.getUri());
 				dto.setTitle(e.getTitle());
-				dto.setText(Jsoup.clean(e.getDescription().getValue(),
-						Whitelist.simpleText()));
+
+				if (e.getDescription() != null) {
+					dto.setText(Jsoup.clean(e.getDescription().getValue(),
+							Whitelist.simpleText()));
+				}
+
 				dto.setSource(e.getLink());
 				dto.setPublishedAt(e.getPublishedDate());
 				dto.setAuthor(e.getAuthor());
@@ -64,8 +68,11 @@ public class RssParser {
 
 				if (geo != null) {
 					String[] geoAr = geo.split(" ");
-					dto.setGeoRssPoint(Float.parseFloat(geoAr[1]),
-							Float.parseFloat(geoAr[0]));
+
+					if (geoAr.length == 2) {
+						dto.setGeoRssPoint(Float.parseFloat(geoAr[1]),
+								Float.parseFloat(geoAr[0]));
+					}
 				}
 
 				list.add(dto);
