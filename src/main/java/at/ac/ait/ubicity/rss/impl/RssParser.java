@@ -5,8 +5,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.xml.stream.XMLInputFactory;
-
 import org.apache.log4j.Logger;
 import org.jdom2.Element;
 import org.jsoup.Jsoup;
@@ -26,15 +24,9 @@ public class RssParser {
 
 	private final URL url;
 
-	private final String lastGuid;
-
-	private final XMLInputFactory factory = XMLInputFactory.newInstance();
-
 	public RssParser(String urlString, String lastGuid)
 			throws MalformedURLException {
 		this.url = new URL(urlString);
-
-		this.lastGuid = lastGuid;
 	}
 
 	public List<RssDTO> fetchUpdates() throws Exception {
@@ -57,7 +49,9 @@ public class RssParser {
 
 				List<String> cats = new ArrayList<String>();
 				for (SyndCategory cat : e.getCategories()) {
-					cats.add(cat.getName());
+					if (cat != null) {
+						cats.add(cat.getName());
+					}
 				}
 
 				dto.setCategories(cats);
