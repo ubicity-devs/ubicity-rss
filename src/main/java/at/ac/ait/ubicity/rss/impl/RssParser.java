@@ -11,7 +11,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
 import org.xml.sax.InputSource;
 
-import at.ac.ait.ubicity.contracts.rss.RssDTO;
+import at.ac.ait.ubicity.rss.dto.RssDTO;
 
 import com.rometools.rome.feed.synd.SyndCategory;
 import com.rometools.rome.feed.synd.SyndEntry;
@@ -24,8 +24,7 @@ public class RssParser {
 
 	private final URL url;
 
-	public RssParser(String urlString, String lastGuid)
-			throws MalformedURLException {
+	public RssParser(String urlString, String lastGuid) throws MalformedURLException {
 		this.url = new URL(urlString);
 	}
 
@@ -43,8 +42,7 @@ public class RssParser {
 				dto.setTitle(e.getTitle());
 
 				if (e.getDescription() != null) {
-					dto.setText(Jsoup.clean(e.getDescription().getValue(),
-							Whitelist.simpleText()));
+					dto.setText(Jsoup.clean(e.getDescription().getValue(), Whitelist.simpleText()));
 				}
 
 				dto.setSource(e.getLink());
@@ -60,18 +58,15 @@ public class RssParser {
 
 				dto.setCategories(cats);
 
-				dto.setLang(readForeignMarkup(e.getForeignMarkup(),
-						ForeignRssTag.LANG));
+				dto.setLang(readForeignMarkup(e.getForeignMarkup(), ForeignRssTag.LANG));
 
-				String geo = readForeignMarkup(e.getForeignMarkup(),
-						ForeignRssTag.GEO_POINT);
+				String geo = readForeignMarkup(e.getForeignMarkup(), ForeignRssTag.GEO_POINT);
 
 				if (geo != null) {
 					String[] geoAr = geo.split(" ");
 
 					if (geoAr.length == 2) {
-						dto.setGeoRssPoint(Float.parseFloat(geoAr[1]),
-								Float.parseFloat(geoAr[0]));
+						dto.setGeoRssPoint(Float.parseFloat(geoAr[1]), Float.parseFloat(geoAr[0]));
 					}
 				}
 
@@ -82,8 +77,7 @@ public class RssParser {
 			logger.warn("Exc caught while loading entries", e);
 		}
 
-		logger.info(list.size() + " new RSS Entries read from "
-				+ this.url.toString());
+		logger.info(list.size() + " new RSS Entries read from " + this.url.toString());
 
 		return list;
 	}

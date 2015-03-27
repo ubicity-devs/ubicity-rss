@@ -28,7 +28,7 @@ import at.ac.ait.ubicity.commons.broker.events.EventEntry.Property;
 import at.ac.ait.ubicity.commons.broker.exceptions.UbicityBrokerException;
 import at.ac.ait.ubicity.commons.cron.AbstractTask;
 import at.ac.ait.ubicity.commons.util.PropertyLoader;
-import at.ac.ait.ubicity.contracts.rss.RssDTO;
+import at.ac.ait.ubicity.rss.dto.RssDTO;
 
 public class RssReaderTask extends AbstractTask {
 
@@ -42,16 +42,14 @@ public class RssReaderTask extends AbstractTask {
 	class Producer extends BrokerProducer {
 
 		public Producer(PropertyLoader config) throws UbicityBrokerException {
-			super.init(config.getString("plugin.rss.broker.user"),
-					config.getString("plugin.rss.broker.pwd"));
+			super.init(config.getString("plugin.rss.broker.user"), config.getString("plugin.rss.broker.pwd"));
 			setProducer(config.getString("plugin.rss.broker.dest"));
 		}
 	}
 
 	public RssReaderTask() {
 		try {
-			PropertyLoader config = new PropertyLoader(
-					RssReaderTask.class.getResource("/rss.cfg"));
+			PropertyLoader config = new PropertyLoader(RssReaderTask.class.getResource("/rss.cfg"));
 			esIndex = config.getString("plugin.rss.elasticsearch.index");
 			producer = new Producer(config);
 		} catch (Exception e) {
@@ -63,8 +61,7 @@ public class RssReaderTask extends AbstractTask {
 	public void executeTask() {
 
 		try {
-			parser = new RssParser((String) getProperty("URL"),
-					(String) getProperty("lastGuid"));
+			parser = new RssParser((String) getProperty("URL"), (String) getProperty("lastGuid"));
 
 			List<RssDTO> dtoList = parser.fetchUpdates();
 
