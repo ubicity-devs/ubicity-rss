@@ -17,6 +17,7 @@
  */
 package at.ac.ait.ubicity.rss.impl;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
@@ -25,8 +26,8 @@ import org.apache.log4j.Logger;
 import at.ac.ait.ubicity.commons.broker.BrokerProducer;
 import at.ac.ait.ubicity.commons.broker.events.EventEntry;
 import at.ac.ait.ubicity.commons.broker.events.EventEntry.Property;
-import at.ac.ait.ubicity.commons.broker.exceptions.UbicityBrokerException;
 import at.ac.ait.ubicity.commons.cron.AbstractTask;
+import at.ac.ait.ubicity.commons.exceptions.UbicityBrokerException;
 import at.ac.ait.ubicity.commons.util.PropertyLoader;
 import at.ac.ait.ubicity.rss.dto.RssDTO;
 
@@ -38,12 +39,13 @@ public class RssReaderTask extends AbstractTask {
 	private Producer producer;
 
 	private String esIndex;
+	private String pluginDest;
 
 	class Producer extends BrokerProducer {
 
 		public Producer(PropertyLoader config) throws UbicityBrokerException {
 			super.init(config.getString("plugin.rss.broker.user"), config.getString("plugin.rss.broker.pwd"));
-			setProducer(config.getString("plugin.rss.broker.dest"));
+			pluginDest = config.getString("plugin.rss.broker.dest");
 		}
 	}
 
@@ -83,7 +85,7 @@ public class RssReaderTask extends AbstractTask {
 			logger.warn("Caught exc. while fetching updates", e);
 		}
 
-		producer.shutdown();
+		producer.shutdown(pluginDest);
 	}
 
 	private EventEntry createEvent(RssDTO data) {
@@ -91,6 +93,7 @@ public class RssReaderTask extends AbstractTask {
 		header.put(Property.ES_INDEX, this.esIndex);
 		header.put(Property.ES_TYPE, getName());
 		header.put(Property.ID, data.getId());
+		header.put(Property.PLUGIN_CHAIN, EventEntry.formatPluginChain(Arrays.asList(pluginDest)));
 
 		return new EventEntry(header, data.toJson());
 	}

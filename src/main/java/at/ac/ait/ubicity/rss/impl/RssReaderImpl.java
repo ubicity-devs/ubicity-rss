@@ -49,8 +49,7 @@ public class RssReaderImpl extends AbstractCronPlugin implements RssReader {
 	@Override
 	@Init
 	public void init() {
-		PropertyLoader config = new PropertyLoader(
-				RssReaderImpl.class.getResource("/rss.cfg"));
+		PropertyLoader config = new PropertyLoader(RssReaderImpl.class.getResource("/rss.cfg"));
 		setPluginConfig(config);
 		setReaderTasks(config);
 
@@ -79,9 +78,7 @@ public class RssReaderImpl extends AbstractCronPlugin implements RssReader {
 
 			for (int i = 0; i < urlList.length; i++) {
 				RssReaderTask rssTask = new RssReaderTask();
-				rssTask.setTimeInterval(interval.replace("x",
-						String.valueOf((i * 5) % 60)).replace("y",
-						String.valueOf(i % 60)));
+				rssTask.setTimeInterval(interval.replace("x", String.valueOf((i * 5) % 60)).replace("y", String.valueOf(i % 60)));
 				rssTask.setProperty("URL", urlList[i]);
 				rssTask.setName(urlList[i].split("[?]")[0]);
 				tasks.add(rssTask);
@@ -106,6 +103,6 @@ public class RssReaderImpl extends AbstractCronPlugin implements RssReader {
 	@Override
 	@Shutdown
 	public void shutdown() {
-
+		super.shutdown();
 	}
 }
