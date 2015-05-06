@@ -84,8 +84,6 @@ public class RssReaderTask extends AbstractTask {
 		} catch (Exception e) {
 			logger.warn("Caught exc. while fetching updates", e);
 		}
-
-		producer.shutdown(pluginDest);
 	}
 
 	private EventEntry createEvent(RssDTO data) {
