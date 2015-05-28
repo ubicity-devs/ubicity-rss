@@ -33,9 +33,9 @@ import at.ac.ait.ubicity.rss.dto.RssDTO;
 
 public class RssReaderTask extends AbstractTask {
 
-	final static Logger logger = Logger.getLogger(RssReaderTask.class);
+	private final static Logger logger = Logger.getLogger(RssReaderTask.class);
+	private static PropertyLoader config = new PropertyLoader(RssReaderTask.class.getResource("/rss.cfg"));
 
-	private RssParser parser;
 	private Producer producer;
 
 	private String esIndex;
@@ -51,7 +51,6 @@ public class RssReaderTask extends AbstractTask {
 
 	public RssReaderTask() {
 		try {
-			PropertyLoader config = new PropertyLoader(RssReaderTask.class.getResource("/rss.cfg"));
 			esIndex = config.getString("plugin.rss.elasticsearch.index");
 			producer = new Producer(config);
 		} catch (Exception e) {
@@ -63,24 +62,17 @@ public class RssReaderTask extends AbstractTask {
 	public void executeTask() {
 
 		try {
-			parser = new RssParser((String) getProperty("URL"), (String) getProperty("lastGuid"));
+			RssFetcher rf = new RssFetcher((String) getProperty("URL"), (String) getProperty("lastGuid"));
+			rf.start();
 
-			List<RssDTO> dtoList = parser.fetchUpdates();
-
-			dtoList.stream().forEach((dto) -> {
-				try {
-					EventEntry e = createEvent(dto);
-
-					producer.publish(e);
-				} catch (Exception e) {
-					logger.warn("Caught exc. while publishing", e);
-				}
-			});
-
-			if (dtoList.size() > 0) {
-				setProperty("lastGuid", dtoList.get(0).getId());
+			// Wait one minute then interrupt Fetcher thread
+			for (int i = 0; i < 60 && rf.isAlive(); i++) {
+				Thread.sleep(1000);
 			}
 
+			if (rf.isAlive()) {
+				rf.interrupt();
+			}
 		} catch (Exception e) {
 			logger.warn("Caught exc. while fetching updates", e);
 		}
@@ -94,6 +86,48 @@ public class RssReaderTask extends AbstractTask {
 		header.put(Property.PLUGIN_CHAIN, EventEntry.formatPluginChain(Arrays.asList(pluginDest)));
 
 		return new EventEntry(header, data.toJson());
+	}
+
+	/**
+	 * Outsource fetching in Thread to kill it after certain time.
+	 * 
+	 * @author ruggenthalerc
+	 *
+	 */
+	class RssFetcher extends Thread {
+
+		private final String urlString, lastGuid;
+
+		RssFetcher(String urlString, String lastGuid) {
+			this.urlString = urlString;
+			this.lastGuid = lastGuid;
+		}
+
+		@Override
+		public void run() {
+			try {
+				RssParser parser = new RssParser(urlString, lastGuid);
+
+				List<RssDTO> dtoList = parser.fetchUpdates();
+
+				dtoList.stream().forEach((dto) -> {
+					try {
+						EventEntry e = createEvent(dto);
+
+						producer.publish(e);
+					} catch (Exception e) {
+						logger.warn("Caught exc. while publishing", e);
+					}
+				});
+
+				if (dtoList.size() > 0) {
+					setProperty("lastGuid", dtoList.get(0).getId());
+				}
+
+			} catch (Exception e) {
+				logger.warn("Caught exc. while fetching updates", e);
+			}
+		}
 	}
 
 }

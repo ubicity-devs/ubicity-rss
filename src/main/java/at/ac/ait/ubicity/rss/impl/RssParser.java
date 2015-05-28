@@ -9,7 +9,6 @@ import org.apache.log4j.Logger;
 import org.jdom2.Element;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
-import org.xml.sax.InputSource;
 
 import at.ac.ait.ubicity.rss.dto.RssDTO;
 
@@ -17,6 +16,7 @@ import com.rometools.rome.feed.synd.SyndCategory;
 import com.rometools.rome.feed.synd.SyndEntry;
 import com.rometools.rome.feed.synd.SyndFeed;
 import com.rometools.rome.io.SyndFeedInput;
+import com.rometools.rome.io.XmlReader;
 
 public class RssParser {
 
@@ -33,8 +33,9 @@ public class RssParser {
 		List<RssDTO> list = new ArrayList<RssDTO>();
 
 		try {
-			InputSource is = new InputSource(url.openStream());
-			SyndFeed feed = new SyndFeedInput().build(is);
+			SyndFeedInput input = new SyndFeedInput();
+			input.setXmlHealerOn(true);
+			SyndFeed feed = input.build(new XmlReader(url.openStream()));
 
 			for (SyndEntry e : feed.getEntries()) {
 				RssDTO dto = new RssDTO();
@@ -72,7 +73,6 @@ public class RssParser {
 
 				list.add(dto);
 			}
-
 		} catch (Exception e) {
 			logger.warn("Exc caught while loading entries", e);
 		}
