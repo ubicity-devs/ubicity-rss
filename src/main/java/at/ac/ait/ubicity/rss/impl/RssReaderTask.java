@@ -69,10 +69,7 @@ public class RssReaderTask extends AbstractTask {
 			for (int i = 0; i < 60 && rf.isAlive(); i++) {
 				Thread.sleep(1000);
 			}
-
-			if (rf.isAlive()) {
-				rf.interrupt();
-			}
+			rf.interrupt();
 		} catch (Exception e) {
 			logger.warn("Caught exc. while fetching updates", e);
 		}
