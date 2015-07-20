@@ -27,9 +27,9 @@ import at.ac.ait.ubicity.commons.broker.BrokerProducer;
 import at.ac.ait.ubicity.commons.broker.events.EventEntry;
 import at.ac.ait.ubicity.commons.broker.events.EventEntry.Property;
 import at.ac.ait.ubicity.commons.cron.AbstractTask;
+import at.ac.ait.ubicity.commons.dto.rss.RssDTO;
 import at.ac.ait.ubicity.commons.exceptions.UbicityBrokerException;
 import at.ac.ait.ubicity.commons.util.PropertyLoader;
-import at.ac.ait.ubicity.rss.dto.RssDTO;
 
 public class RssReaderTask extends AbstractTask {
 
@@ -39,13 +39,13 @@ public class RssReaderTask extends AbstractTask {
 	private Producer producer;
 
 	private String esIndex;
-	private String pluginDest;
+	private String pluginDest[];
 
 	class Producer extends BrokerProducer {
 
 		public Producer(PropertyLoader config) throws UbicityBrokerException {
 			super.init(config.getString("plugin.rss.broker.user"), config.getString("plugin.rss.broker.pwd"));
-			pluginDest = config.getString("plugin.rss.broker.dest");
+			pluginDest = config.getStringArray("plugin.rss.broker.dest");
 		}
 	}
 

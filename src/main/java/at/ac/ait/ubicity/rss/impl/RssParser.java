@@ -10,7 +10,7 @@ import org.jdom2.Element;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
 
-import at.ac.ait.ubicity.rss.dto.RssDTO;
+import at.ac.ait.ubicity.commons.dto.rss.RssDTO;
 
 import com.rometools.rome.feed.synd.SyndCategory;
 import com.rometools.rome.feed.synd.SyndEntry;
