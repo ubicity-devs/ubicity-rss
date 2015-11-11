@@ -1,20 +1,3 @@
-/**
-    Copyright (C) 2014  AIT / Austrian Institute of Technology
-    http://www.ait.ac.at
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation, either version 3 of the
-    License, or (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
-
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see http://www.gnu.org/licenses/agpl-3.0.html
- */
 package at.ac.ait.ubicity.rss.impl;
 
 import java.util.Arrays;
@@ -62,7 +45,7 @@ public class RssReaderTask extends AbstractTask {
 	public void executeTask() {
 
 		try {
-			RssFetcher rf = new RssFetcher((String) getProperty("URL"), (String) getProperty("lastGuid"));
+			RssFetcher rf = new RssFetcher((String) getProperty("URL"));
 			rf.start();
 
 			// Wait one minute then interrupt Fetcher thread
@@ -93,17 +76,16 @@ public class RssReaderTask extends AbstractTask {
 	 */
 	class RssFetcher extends Thread {
 
-		private final String urlString, lastGuid;
+		private final String urlString;
 
-		RssFetcher(String urlString, String lastGuid) {
+		RssFetcher(String urlString) {
 			this.urlString = urlString;
-			this.lastGuid = lastGuid;
 		}
 
 		@Override
 		public void run() {
 			try {
-				RssParser parser = new RssParser(urlString, lastGuid);
+				RssParser parser = new RssParser(urlString);
 
 				List<RssDTO> dtoList = parser.fetchUpdates();
 

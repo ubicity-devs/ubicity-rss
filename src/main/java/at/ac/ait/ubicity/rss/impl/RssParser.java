@@ -24,7 +24,7 @@ public class RssParser {
 
 	private final URL url;
 
-	public RssParser(String urlString, String lastGuid) throws MalformedURLException {
+	public RssParser(String urlString) throws MalformedURLException {
 		this.url = new URL(urlString);
 	}
 
