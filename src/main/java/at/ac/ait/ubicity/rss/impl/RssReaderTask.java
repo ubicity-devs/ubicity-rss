@@ -12,6 +12,7 @@ import at.ac.ait.ubicity.commons.broker.events.EventEntry.Property;
 import at.ac.ait.ubicity.commons.cron.AbstractTask;
 import at.ac.ait.ubicity.commons.dto.rss.RssDTO;
 import at.ac.ait.ubicity.commons.exceptions.UbicityBrokerException;
+import at.ac.ait.ubicity.commons.util.ESIndexCreator;
 import at.ac.ait.ubicity.commons.util.PropertyLoader;
 
 public class RssReaderTask extends AbstractTask {
@@ -21,20 +22,20 @@ public class RssReaderTask extends AbstractTask {
 
 	private Producer producer;
 
-	private String esIndex;
+	private ESIndexCreator ic;
 	private String pluginDest[];
 
 	class Producer extends BrokerProducer {
 
 		public Producer(PropertyLoader config) throws UbicityBrokerException {
-			super.init(config.getString("plugin.rss.broker.user"), config.getString("plugin.rss.broker.pwd"));
+			super.init();
 			pluginDest = config.getStringArray("plugin.rss.broker.dest");
 		}
 	}
 
 	public RssReaderTask() {
 		try {
-			esIndex = config.getString("plugin.rss.elasticsearch.index");
+			ic = new ESIndexCreator(config.getString("plugin.rss.elasticsearch.index"), "", config.getString("plugin.rss.elasticsearch.pattern"));
 			producer = new Producer(config);
 		} catch (Exception e) {
 			logger.error("Exc. while creating producer", e);
@@ -60,7 +61,7 @@ public class RssReaderTask extends AbstractTask {
 
 	private EventEntry createEvent(RssDTO data) {
 		HashMap<Property, String> header = new HashMap<Property, String>();
-		header.put(Property.ES_INDEX, this.esIndex);
+		header.put(Property.ES_INDEX, ic.getIndex());
 		header.put(Property.ES_TYPE, getName());
 		header.put(Property.ID, data.getId());
 		header.put(Property.PLUGIN_CHAIN, EventEntry.formatPluginChain(Arrays.asList(pluginDest)));
