@@ -20,10 +20,10 @@ public class RssReaderTask extends AbstractTask {
 	private final static Logger logger = Logger.getLogger(RssReaderTask.class);
 	private static PropertyLoader config = new PropertyLoader(RssReaderTask.class.getResource("/rss.cfg"));
 
-	private Producer producer;
+	private static Producer producer;
 
 	private ESIndexCreator ic;
-	private String pluginDest[];
+	private static String pluginDest[];
 
 	class Producer extends BrokerProducer {
 
@@ -36,7 +36,8 @@ public class RssReaderTask extends AbstractTask {
 	public RssReaderTask() {
 		try {
 			ic = new ESIndexCreator(config.getString("plugin.rss.elasticsearch.index"), "", config.getString("plugin.rss.elasticsearch.pattern"));
-			producer = new Producer(config);
+			if (producer == null)
+				producer = new Producer(config);
 		} catch (Exception e) {
 			logger.error("Exc. while creating producer", e);
 		}
@@ -46,14 +47,24 @@ public class RssReaderTask extends AbstractTask {
 	public void executeTask() {
 
 		try {
-			RssFetcher rf = new RssFetcher((String) getProperty("URL"));
-			rf.start();
+			RssParser parser = new RssParser((String) getProperty("URL"));
 
-			// Wait one minute then interrupt Fetcher thread
-			for (int i = 0; i < 60 && rf.isAlive(); i++) {
-				Thread.sleep(1000);
+			List<RssDTO> dtoList = parser.fetchUpdates();
+
+			dtoList.stream().forEach((dto) -> {
+				try {
+					EventEntry e = createEvent(dto);
+
+					producer.publish(e);
+				} catch (Exception e) {
+					logger.warn("Caught exc. while publishing", e);
+				}
+			});
+
+			if (dtoList.size() > 0) {
+				setProperty("lastGuid", dtoList.get(0).getId());
 			}
-			rf.interrupt();
+
 		} catch (Exception e) {
 			logger.warn("Caught exc. while fetching updates", e);
 		}
@@ -68,46 +79,4 @@ public class RssReaderTask extends AbstractTask {
 
 		return new EventEntry(header, data.toJson());
 	}
-
-	/**
-	 * Outsource fetching in Thread to kill it after certain time.
-	 * 
-	 * @author ruggenthalerc
-	 *
-	 */
-	class RssFetcher extends Thread {
-
-		private final String urlString;
-
-		RssFetcher(String urlString) {
-			this.urlString = urlString;
-		}
-
-		@Override
-		public void run() {
-			try {
-				RssParser parser = new RssParser(urlString);
-
-				List<RssDTO> dtoList = parser.fetchUpdates();
-
-				dtoList.stream().forEach((dto) -> {
-					try {
-						EventEntry e = createEvent(dto);
-
-						producer.publish(e);
-					} catch (Exception e) {
-						logger.warn("Caught exc. while publishing", e);
-					}
-				});
-
-				if (dtoList.size() > 0) {
-					setProperty("lastGuid", dtoList.get(0).getId());
-				}
-
-			} catch (Exception e) {
-				logger.warn("Caught exc. while fetching updates", e);
-			}
-		}
-	}
-
 }
